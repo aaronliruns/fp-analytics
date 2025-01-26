@@ -1,0 +1,6 @@
+database:
+  name: "fingerprints.db"
+  table_name: "fingerprints"
+
+server:
+  port: "8081"
