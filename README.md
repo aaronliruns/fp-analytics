@@ -7,3 +7,8 @@
       "components": "{\"key\":\"value\"}"
    }'
 ```
+
+```shell
+     touch /tmp/fingerprints.db
+     docker run --name fp-analytics --network="host" -v /tmp/fingerprints.db:/app/fingerprints.db -d fp-analytics
+```
