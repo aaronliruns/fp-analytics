@@ -2,6 +2,9 @@ package main
 
 import (
 	"database/sql"
+	"encoding/json"
+	"fmt"
+	"github.com/go-playground/validator/v10"
 	"log"
 	"net/http"
 	"strconv"
@@ -39,7 +42,20 @@ func createTable() {
 func HandleFingerprint(c *gin.Context) {
 	var fp Fingerprint
 	if err := c.ShouldBindJSON(&fp); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request payload"})
+		var fieldErrors []string
+		if _, ok := err.(*json.UnmarshalTypeError); ok {
+			fieldErrors = append(fieldErrors, fmt.Sprintf("Invalid type for field %s", err.(*json.UnmarshalTypeError).Field))
+		} else if errs, ok := err.(validator.ValidationErrors); ok {
+			for _, e := range errs {
+				fieldErrors = append(fieldErrors, fmt.Sprintf("Invalid value for field %s", e.Field()))
+			}
+		}
+
+		if len(fieldErrors) > 0 {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request payload", "details": fieldErrors})
+		} else {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request payload"})
+		}
 		return
 	}
 
