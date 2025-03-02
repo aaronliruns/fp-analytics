@@ -1,11 +1,7 @@
 ```shell
-   curl -X POST http://localhost:8080/fingerprint \
-   -H "Content-Type: application/json" \
-   -d '{ 
-      "visitor_id": "test", 
-      "user_agent": "Mozilla/5.0", 
-      "components": "{\"key\":\"value\"}"
-   }'
+curl -X POST http://localhost:8080/fingerprint \
+  -H "Content-Type: application/json" \
+  -d '{"visitor_id": "123", "user_agent": "Mozilla/5.0", "components": {"key": "value"}, "dpr": "3.0"}'
 ```
 
 ```shell
