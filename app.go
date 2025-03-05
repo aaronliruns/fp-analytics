@@ -4,13 +4,64 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"github.com/go-playground/validator/v10"
 	"log"
 	"net/http"
 	"strconv"
 
+	"github.com/go-playground/validator/v10"
+
 	"github.com/gin-gonic/gin"
 )
+
+type TouchSupport struct {
+	MaxTouchPoints int  `json:"maxTouchPoints"`
+	TouchEvent     bool `json:"touchEvent"`
+	TouchStart     bool `json:"touchStart"`
+}
+
+type VideoCard struct {
+	Vendor string `json:"vendor"`
+	Model  string `json:"model"`
+}
+
+type Components struct {
+	ScreenResolution struct {
+		Value    []int `json:"value"`
+		Duration int   `json:"duration"`
+	} `json:"screenResolution"`
+	HardwareConcurrency struct {
+		Value    int `json:"value"`
+		Duration int `json:"duration"`
+	} `json:"hardwareConcurrency"`
+	Platform struct {
+		Value    string `json:"value"`
+		Duration int    `json:"duration"`
+	} `json:"platform"`
+	TouchSupport struct {
+		Value    TouchSupport `json:"value"`
+		Duration int          `json:"duration"`
+	} `json:"touchSupport"`
+	VideoCard struct {
+		Value    VideoCard `json:"value"`
+		Duration int       `json:"duration"`
+	} `json:"videoCard"`
+	Architecture struct {
+		Value    int `json:"value"`
+		Duration int `json:"duration"`
+	} `json:"architecture"`
+}
+
+type FingerprintResponse struct {
+	RowNumber           int          `json:"row_number"`
+	UserAgent           string       `json:"user_agent"`
+	ScreenResolution    []int        `json:"screen_resolution"`
+	HardwareConcurrency int          `json:"hardware_concurrency"`
+	Platform            string       `json:"platform"`
+	TouchSupport        TouchSupport `json:"touch_support"`
+	VideoCard           VideoCard    `json:"video_card"`
+	Architecture        int          `json:"architecture"`
+	DPR                 float64      `json:"dpr"`
+}
 
 type Fingerprint struct {
 	VisitorID  string `json:"visitor_id"`
@@ -83,4 +134,66 @@ func SaveFingerprint(fp Fingerprint) error {
                   dpr = excluded.dpr;`
 	_, err = Db.Exec(insertSQL, fp.VisitorID, fp.UserAgent, fp.Components, dpr)
 	return err
+}
+
+func HandleFingerprintCount(c *gin.Context) {
+	var count int
+	err := Db.QueryRow("SELECT COUNT(*) FROM fingerprints").Scan(&count)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get fingerprint count"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"count": count})
+}
+
+func HandleFingerprintRow(c *gin.Context) {
+	// Get row number from query parameter
+	rowNum := c.Query("row")
+	if rowNum == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Row number is required"})
+		return
+	}
+
+	// Convert row number to integer
+	rowNumber, err := strconv.Atoi(rowNum)
+	if err != nil || rowNumber < 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid row number"})
+		return
+	}
+
+	// Query the specific row using LIMIT and OFFSET
+	var userAgent, componentsStr string
+	var dpr float64
+	err = Db.QueryRow("SELECT user_agent, components, dpr FROM fingerprints LIMIT 1 OFFSET ?", rowNumber).Scan(&userAgent, &componentsStr, &dpr)
+	if err == sql.ErrNoRows {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Row not found"})
+		return
+	} else if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get fingerprint row"})
+		return
+	}
+
+	// Parse components JSON string
+	var components Components
+	err = json.Unmarshal([]byte(componentsStr), &components)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to parse components data"})
+		return
+	}
+
+	// Create response object
+	response := FingerprintResponse{
+		RowNumber:           rowNumber,
+		UserAgent:           userAgent,
+		ScreenResolution:    components.ScreenResolution.Value,
+		HardwareConcurrency: components.HardwareConcurrency.Value,
+		Platform:            components.Platform.Value,
+		TouchSupport:        components.TouchSupport.Value,
+		VideoCard:           components.VideoCard.Value,
+		Architecture:        components.Architecture.Value,
+		DPR:                 dpr,
+	}
+
+	c.JSON(http.StatusOK, response)
 }

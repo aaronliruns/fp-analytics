@@ -54,6 +54,8 @@ func main() {
 	// Start the server
 	r := gin.Default()
 	r.POST("/fingerprint", HandleFingerprint)
+	r.GET("/fingerprints/count", HandleFingerprintCount)
+	r.GET("/fingerprints/row", HandleFingerprintRow)
 
 	port := fmt.Sprintf(":%s", config.Server.Port)
 	log.Printf("Server running on port %s", port)
