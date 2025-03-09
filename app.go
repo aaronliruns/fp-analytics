@@ -19,8 +19,8 @@ type TouchSupport struct {
 }
 
 type VideoCard struct {
-	Vendor string `json:"vendor"`
-	Model  string `json:"model"`
+	Vendor   string `json:"vendor"`
+	Renderer string `json:"renderer"`
 }
 
 type Components struct {
@@ -44,6 +44,13 @@ type Components struct {
 		Value    VideoCard `json:"value"`
 		Duration int       `json:"duration"`
 	} `json:"videoCard"`
+	WebGlBasics struct {
+		Value struct {
+			VendorUnmasked   string `json:"vendorUnmasked"`
+			RendererUnmasked string `json:"rendererUnmasked"`
+		} `json:"value"`
+		Duration int `json:"duration"`
+	} `json:"webGlBasics"`
 	Architecture struct {
 		Value    int `json:"value"`
 		Duration int `json:"duration"`
@@ -189,9 +196,20 @@ func HandleFingerprintRow(c *gin.Context) {
 		HardwareConcurrency: components.HardwareConcurrency.Value,
 		Platform:            components.Platform.Value,
 		TouchSupport:        components.TouchSupport.Value,
-		VideoCard:           components.VideoCard.Value,
 		Architecture:        components.Architecture.Value,
 		DPR:                 dpr,
+	}
+
+	// Handle video card mapping based on webGlBasics availability
+	if components.WebGlBasics.Value.VendorUnmasked != "" {
+		// When webGlBasics is available, use vendorUnmasked and rendererUnmasked
+		response.VideoCard = VideoCard{
+			Vendor:   components.WebGlBasics.Value.VendorUnmasked,
+			Renderer: components.WebGlBasics.Value.RendererUnmasked,
+		}
+	} else {
+		// When webGlBasics is not available, use the original videoCard values
+		response.VideoCard = components.VideoCard.Value
 	}
 
 	c.JSON(http.StatusOK, response)
