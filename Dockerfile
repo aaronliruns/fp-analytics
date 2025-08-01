@@ -43,7 +43,7 @@ ENV GIN_MODE=release
 ENV PROFILE_PATH=/app/profiles
 
 # Expose the application port
-EXPOSE 8080
+EXPOSE 8090
 
 # Command to run the application
 CMD ["./server"]
