@@ -85,11 +85,16 @@ func InitDatabase(database *sql.DB) {
 
 func createTable() {
 	createTableSQL := `CREATE TABLE IF NOT EXISTS fingerprints (
-          visitor_id TEXT PRIMARY KEY,
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          visitor_id TEXT UNIQUE,
           user_agent TEXT,
           components TEXT,
           dpr REAL
-      );`
+      );
+      
+      -- Create indexes for better performance
+      CREATE INDEX IF NOT EXISTS idx_fingerprints_id ON fingerprints (id);
+      CREATE INDEX IF NOT EXISTS idx_fingerprints_visitor_id ON fingerprints (visitor_id);`
 	_, err := Db.Exec(createTableSQL)
 	if err != nil {
 		log.Fatal(err)
@@ -144,7 +149,7 @@ func SaveFingerprint(fp Fingerprint) error {
 
 func HandleFingerprintCount(c *gin.Context) {
 	var count int
-	err := Db.QueryRow("SELECT COUNT(*) FROM fingerprints").Scan(&count)
+	err := Db.QueryRow("SELECT COUNT(id) FROM fingerprints").Scan(&count)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get fingerprint count"})
 		return
@@ -168,10 +173,10 @@ func HandleFingerprintRow(c *gin.Context) {
 		return
 	}
 
-	// Query the specific row using LIMIT and OFFSET
+	// Query the specific row using direct id access instead of OFFSET
 	var userAgent, componentsStr string
 	var dpr float64
-	err = Db.QueryRow("SELECT user_agent, components, dpr FROM fingerprints LIMIT 1 OFFSET ?", rowNumber).Scan(&userAgent, &componentsStr, &dpr)
+	err = Db.QueryRow("SELECT user_agent, components, dpr FROM fingerprints WHERE id = ?", rowNumber).Scan(&userAgent, &componentsStr, &dpr)
 	if err == sql.ErrNoRows {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Row not found"})
 		return
