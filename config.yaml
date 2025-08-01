@@ -1,6 +1,6 @@
-database:
-  name: "fingerprints.db"
-  table_name: "fingerprints"
-
 server:
   port: "8080"
+
+fingerprints:
+  profile_path: ${PROFILE_PATH}
+  version: 138
