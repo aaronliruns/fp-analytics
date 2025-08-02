@@ -2,6 +2,7 @@ package main
 
 import (
 	"crypto/md5"
+	"database/sql"
 	"encoding/hex"
 	"fmt"
 	"io"
@@ -15,6 +16,13 @@ import (
 )
 
 func HandleFingerprint(c *gin.Context) {
+	// Get key from URL parameter
+	keyStr := c.Param("key")
+	if keyStr == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Missing key parameter in URL"})
+		return
+	}
+
 	// Read and parse the JSON payload
 	body, err := io.ReadAll(c.Request.Body)
 	if err != nil {
@@ -22,7 +30,20 @@ func HandleFingerprint(c *gin.Context) {
 		return
 	}
 
-	// Generate filename components
+	// Check if key already exists in database
+	var existingID int
+	err = db.QueryRow("SELECT id FROM fingerprints WHERE key = ?", keyStr).Scan(&existingID)
+	if err != sql.ErrNoRows {
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Database query failed"})
+			return
+		}
+		// Key already exists, return duplicate response
+		c.JSON(http.StatusConflict, gin.H{"message": "Fingerprint with this key already exists", "duplicate": true})
+		return
+	}
+
+	// Generate filename components (line 40 equivalent)
 	now := time.Now()
 	uuidStr := uuid.New().String()
 	datetimeStr := now.Format("2006-01-02 15:04:05")
@@ -55,6 +76,15 @@ func HandleFingerprint(c *gin.Context) {
 		return
 	}
 
+	// Insert into database
+	_, err = db.Exec("INSERT INTO fingerprints (key, filename) VALUES (?, ?)", keyStr, filename)
+	if err != nil {
+		// If database insert fails, clean up the file
+		os.Remove(fullPath)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save fingerprint to database"})
+		return
+	}
+
 	// Return success with filename
-	c.JSON(http.StatusCreated, gin.H{"filename": filename})
+	c.JSON(http.StatusCreated, gin.H{"filename": filename, "key": keyStr, "duplicate": false})
 }

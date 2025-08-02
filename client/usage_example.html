@@ -1,0 +1,81 @@
+<html>
+<head>
+    <title>FP Analytics Usage Example</title>
+    <script src="botbrowser_collect_profile_138_release.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <script>
+        async function generateUniqueKey() {
+            try {
+                // Get IP address
+                const ipResponse = await fetch('https://api.ipify.org/?format=json');
+                const ipData = await ipResponse.json();
+                const ipAddress = ipData.ip;
+                
+                // Get user agent
+                const userAgent = navigator.userAgent;
+                
+                // Get WebGL info
+                const canvas = document.createElement('canvas');
+                const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+                let webglVendor = '';
+                let webglRenderer = '';
+                
+                if (gl) {
+                    const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
+                    if (debugInfo) {
+                        webglVendor = gl.getParameter(debugInfo.UNMASKED_VENDOR_WEBGL) || '';
+                        webglRenderer = gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL) || '';
+                    }
+                }
+                
+                // Create MD5 hash
+                const combinedString = userAgent + ipAddress + webglVendor + webglRenderer;
+                const hash = CryptoJS.MD5(combinedString).toString();
+                
+                return hash;
+            } catch (error) {
+                console.error('Error generating unique key:', error);
+                // Fallback to timestamp-based key if API fails
+                return CryptoJS.MD5(navigator.userAgent + Date.now().toString()).toString();
+            }
+        }
+        
+        async function collectFingerprint() {
+            try {
+                const profileData = await window.__botbrowser_collect_profile();
+                const unique_key = await generateUniqueKey();
+                
+                console.log('Generated unique key:', unique_key);
+                
+                const rawResponse = await fetch(`https://whatever.com/v1/finger/collect/${unique_key}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: profileData,
+                });
+                
+                const result = await rawResponse.text();
+                console.log('Response:', result);
+                
+                return result;
+            } catch (error) {
+                console.error('Error collecting fingerprint:', error);
+            }
+        }
+        
+        // Auto-collect on page load
+        window.addEventListener('load', collectFingerprint);
+    </script>
+</head>
+<body>
+    <h1>FP Analytics Usage Example</h1>
+    <p>This page automatically collects and sends fingerprint data using a unique key generated from:</p>
+    <ul>
+        <li>User Agent</li>
+        <li>IP Address (from api.ipify.org)</li>
+        <li>WebGL Vendor</li>
+        <li>WebGL Renderer</li>
+    </ul>
+    <p>Check the browser console for logs.</p>
+    <p><em>Fingerprint collection will automatically trigger when the page loads.</em></p>
+</body>
+</html>
