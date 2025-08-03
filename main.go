@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"net/http"
 	"os"
 	"path/filepath"
 
@@ -91,6 +92,17 @@ func main() {
 
 	// Start the server
 	r := gin.Default()
+	
+	// Set maximum request body size to 50MB to handle large fingerprint JSON
+	r.MaxMultipartMemory = 50 << 20 // 50 MB
+	
+	// Add middleware to handle large request bodies
+	r.Use(func(c *gin.Context) {
+		// Set max request body size to 50MB
+		c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, 50<<20)
+		c.Next()
+	})
+	
 	r.POST("/v1/finger/collect/:key", HandleFingerprint)
 
 	port := fmt.Sprintf(":%s", config.Server.Port)

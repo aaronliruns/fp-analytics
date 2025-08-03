@@ -26,7 +26,15 @@ func HandleFingerprint(c *gin.Context) {
 	// Read and parse the JSON payload
 	body, err := io.ReadAll(c.Request.Body)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to read request body"})
+		// Check if error is due to request body being too large
+		if err.Error() == "http: request body too large" {
+			c.JSON(http.StatusRequestEntityTooLarge, gin.H{
+				"error": "Request body too large. Maximum allowed size is 50MB",
+				"code":  "REQUEST_TOO_LARGE",
+			})
+		} else {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to read request body"})
+		}
 		return
 	}
 
