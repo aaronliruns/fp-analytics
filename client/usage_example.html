@@ -1,9 +1,65 @@
 <html>
 <head>
-    <title>FP Analytics Usage Example</title>
-    <script src="botbrowser_collect_profile_138_release.min.js"></script>
+    <title>Bot FP Analytics</title>
+    <meta content="width=device-width,minimum-scale=1.0" name="viewport">
+    <script src="https://fp.lspeedl.com/lib/botbrowser_collect_profile_138_release.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
     <script>
+        // Console override for mobile viewing
+        const consoleDiv = document.getElementById ? null : null; // Will be set after DOM loads
+        let originalConsole = {
+            log: console.log,
+            error: console.error,
+            warn: console.warn,
+            info: console.info
+        };
+        
+        function addToConsole(message, type = 'log') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logDiv = document.getElementById('console-logs');
+            if (logDiv) {
+                const color = {
+                    'log': '#0f0',
+                    'error': '#f00',
+                    'warn': '#ff0',
+                    'info': '#00f'
+                }[type] || '#0f0';
+                
+                logDiv.innerHTML += `<div style="color: ${color}; margin-bottom: 5px;">[${timestamp}] ${message}</div>`;
+                logDiv.scrollTop = logDiv.scrollHeight;
+            }
+        }
+        
+        function clearConsole() {
+            const logDiv = document.getElementById('console-logs');
+            if (logDiv) {
+                logDiv.innerHTML = '';
+            }
+        }
+        
+        // Override console methods after DOM loads
+        window.addEventListener('DOMContentLoaded', function() {
+            console.log = function(...args) {
+                originalConsole.log.apply(console, args);
+                addToConsole(args.join(' '), 'log');
+            };
+            
+            console.error = function(...args) {
+                originalConsole.error.apply(console, args);
+                addToConsole(args.join(' '), 'error');
+            };
+            
+            console.warn = function(...args) {
+                originalConsole.warn.apply(console, args);
+                addToConsole(args.join(' '), 'warn');
+            };
+            
+            console.info = function(...args) {
+                originalConsole.info.apply(console, args);
+                addToConsole(args.join(' '), 'info');
+            };
+        });
+        
         async function generateUniqueKey() {
             try {
                 // Get IP address
@@ -46,8 +102,10 @@
                 const unique_key = await generateUniqueKey();
                 
                 console.log('Generated unique key:', unique_key);
+
+                console.log('Posting profile data to endpoint, size:', new Blob([profileData]).size, 'bytes');
                 
-                const rawResponse = await fetch(`https://whatever.com/v1/finger/collect/${unique_key}`, {
+                const rawResponse = await fetch(`https://fp.lspeedl.com/v1/finger/collect/${unique_key}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: profileData,
@@ -67,15 +125,35 @@
     </script>
 </head>
 <body>
-    <h1>FP Analytics Usage Example</h1>
-    <p>This page automatically collects and sends fingerprint data using a unique key generated from:</p>
-    <ul>
-        <li>User Agent</li>
-        <li>IP Address (from api.ipify.org)</li>
-        <li>WebGL Vendor</li>
-        <li>WebGL Renderer</li>
-    </ul>
-    <p>Check the browser console for logs.</p>
-    <p><em>Fingerprint collection will automatically trigger when the page loads.</em></p>
+    <h1>FP Analytics Playground</h1>
+    
+    <div id="console-output">
+        <h2>Console Output:</h2>
+        <div id="console-logs" style="background: #000; color: #0f0; padding: 10px; border-radius: 5px; font-family: monospace; font-size: 12px; max-height: 400px; overflow-y: auto; white-space: pre-wrap;"></div>
+        <button onclick="clearConsole()" style="margin-top: 10px; padding: 5px 10px; background: #007cba; color: white; border: none; border-radius: 3px;">Clear Console</button>
+    </div>
+    
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f5f5f5;
+        }
+        #console-output {
+            margin-top: 20px;
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        h2 {
+            color: #666;
+            margin-top: 0;
+        }
+    </style>
 </body>
 </html>
