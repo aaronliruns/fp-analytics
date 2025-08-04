@@ -88,7 +88,7 @@ CREATE INDEX idx_fingerprints_key ON fingerprints(key);
    docker run -d \
      --name fp-analytics-server \
      -p 8090:8090 \
-     -v /tmp/fingerprints:/app/profiles \
+     -v /root/fingerprints:/app/profiles \
      -e PROFILE_PATH=/app/profiles \
      fp-analytics
    ```
