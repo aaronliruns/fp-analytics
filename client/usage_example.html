@@ -2,7 +2,7 @@
 <head>
     <title>Bot FP Analytics</title>
     <meta content="width=device-width,minimum-scale=1.0" name="viewport">
-    <script src="https://fp.lspeedl.com/lib/botbrowser_collect_profile_138_release.min.js"></script>
+    <script src="https://fpcn.lspeedl.com/lib/botbrowser_collect_profile_140_release.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
     <script>
         // Console override for mobile viewing
@@ -103,18 +103,26 @@
                 
                 console.log('Generated unique key:', unique_key);
 
-                console.log('Posting profile data to endpoint, size:', new Blob([profileData]).size, 'bytes');
+                const profileDataSize = new Blob([profileData]).size;
+                console.log('Profile data size:', profileDataSize, 'bytes');
                 
-                const rawResponse = await fetch(`https://fp.lspeedl.com/v1/finger/collect/${unique_key}`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: profileData,
-                });
-                
-                const result = await rawResponse.text();
-                console.log('Response:', result);
-                
-                return result;
+                if (profileDataSize > 0) {
+                    console.log('Posting profile data to endpoint');
+                    
+                    const rawResponse = await fetch(`https://fpcn.lspeedl.com/v1/finger/collect/${unique_key}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: profileData,
+                    });
+                    
+                    const result = await rawResponse.text();
+                    console.log('Response:', result);
+                    
+                    return result;
+                } else {
+                    console.log('Profile data is empty (size: 0), skipping POST request');
+                    return 'Skipped: Profile data is empty';
+                }
             } catch (error) {
                 console.error('Error collecting fingerprint:', error);
             }
