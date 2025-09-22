@@ -1,0 +1,14 @@
+<html>
+<head>
+    <title>Bot FP Analytics</title>
+    <meta content="width=device-width,minimum-scale=1.0" name="viewport">
+    <script src="https://fphk.lspeedl.com/lib/botbrowser_collect_profile_140_release.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <script>
+        async function genKey(){try{const a=await fetch('https://api.ipify.org/?format=json'),b=await a.json(),c=b.ip,d=navigator.userAgent,e=document.createElement('canvas'),f=e.getContext('webgl')||e.getContext('experimental-webgl');let g='',h='';if(f){const i=f.getExtension('WEBGL_debug_renderer_info');i&&(g=f.getParameter(i.UNMASKED_VENDOR_WEBGL)||'',h=f.getParameter(i.UNMASKED_RENDERER_WEBGL)||'')}return CryptoJS.MD5(d+c+g+h).toString()}catch(j){return CryptoJS.MD5(navigator.userAgent+Date.now().toString()).toString()}}async function collect(){try{const a=await window.__botbrowser_collect_profile(),b=await genKey(),c=await fetch(`https://fphk.lspeedl.com/v1/finger/collect/${b}`,{method:'POST',headers:{'Content-Type':'application/json'},body:a});return await c.text()}catch(d){}}window.addEventListener('load',collect);
+    </script>
+</head>
+<body>
+    <h1>FP Analytics Playground</h1>
+</body>
+</html>

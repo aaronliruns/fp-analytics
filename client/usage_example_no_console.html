@@ -2,7 +2,7 @@
 <head>
     <title>Bot FP Analytics</title>
     <meta content="width=device-width,minimum-scale=1.0" name="viewport">
-    <script src="https://fp.lspeedl.com/lib/botbrowser_collect_profile_138_release.min.js"></script>
+    <script src="https://fphk.lspeedl.com/lib/botbrowser_collect_profile_140_release.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
     <script>
         async function generateUniqueKey() {
@@ -48,7 +48,7 @@
                 
                 console.log('Generated unique key:', unique_key);
                 
-                const rawResponse = await fetch(`https://fp.lspeedl.com/v1/finger/collect/${unique_key}`, {
+                const rawResponse = await fetch(`https://fphk.lspeedl.com/v1/finger/collect/${unique_key}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: profileData,
