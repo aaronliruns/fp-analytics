@@ -1,5 +1,5 @@
 # Build stage
-FROM golang:1.23.2-bookworm AS builder
+FROM golang:1.23-bookworm AS builder
 
 # Enable CGO
 ENV CGO_ENABLED=1
@@ -24,7 +24,7 @@ FROM debian:bookworm-slim
 
 # Install required runtime dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    ca-certificates sqlite3 && \
+    ca-certificates && \
     rm -rf /var/lib/apt/lists/*
 
 # Set working directory inside the container
@@ -39,11 +39,11 @@ COPY config.yaml .
 ENV GIN_MODE=release
 
 
-# Set the database file location as an environment variable (optional)
-ENV DATABASE_FILE=fingerprints.db
+# Set the profile path environment variable
+ENV PROFILE_PATH=/app/profiles
 
 # Expose the application port
-EXPOSE 8080
+EXPOSE 8090
 
 # Command to run the application
 CMD ["./server"]
